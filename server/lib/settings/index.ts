@@ -1,17 +1,17 @@
-import { MediaServerType } from '@server/constants/server';
-import { Permission } from '@server/lib/permissions';
-import { runMigrations } from '@server/lib/settings/migrator';
-import { randomUUID } from 'crypto';
-import fs from 'fs/promises';
-import { merge } from 'lodash';
-import path from 'path';
-import webpush from 'web-push';
+import { MediaServerType } from "@server/constants/server";
+import { Permission } from "@server/lib/permissions";
+import { runMigrations } from "@server/lib/settings/migrator";
+import { randomUUID } from "crypto";
+import fs from "fs/promises";
+import { merge } from "lodash";
+import path from "path";
+import webpush from "web-push";
 
 export interface Library {
   id: string;
   name: string;
   enabled: boolean;
-  type: 'show' | 'movie';
+  type: "show" | "movie";
   lastScan?: number;
 }
 
@@ -84,8 +84,8 @@ export interface RadarrSettings extends DVRSettings {
 }
 
 export interface SonarrSettings extends DVRSettings {
-  seriesType: 'standard' | 'daily' | 'anime';
-  animeSeriesType: 'standard' | 'daily' | 'anime';
+  seriesType: "standard" | "daily" | "anime";
+  animeSeriesType: "standard" | "daily" | "anime";
   activeAnimeProfileId?: number;
   activeAnimeProfileName?: string;
   activeAnimeDirectory?: string;
@@ -258,15 +258,15 @@ export interface NotificationAgentGotify extends NotificationAgentConfig {
 }
 
 export enum NotificationAgentKey {
-  DISCORD = 'discord',
-  EMAIL = 'email',
-  GOTIFY = 'gotify',
-  PUSHBULLET = 'pushbullet',
-  PUSHOVER = 'pushover',
-  SLACK = 'slack',
-  TELEGRAM = 'telegram',
-  WEBHOOK = 'webhook',
-  WEBPUSH = 'webpush',
+  DISCORD = "discord",
+  EMAIL = "email",
+  GOTIFY = "gotify",
+  PUSHBULLET = "pushbullet",
+  PUSHOVER = "pushover",
+  SLACK = "slack",
+  TELEGRAM = "telegram",
+  WEBHOOK = "webhook",
+  WEBPUSH = "webpush",
 }
 
 interface NotificationAgents {
@@ -291,18 +291,18 @@ interface JobSettings {
 }
 
 export type JobId =
-  | 'plex-recently-added-scan'
-  | 'plex-full-scan'
-  | 'plex-watchlist-sync'
-  | 'plex-refresh-token'
-  | 'radarr-scan'
-  | 'sonarr-scan'
-  | 'download-sync'
-  | 'download-sync-reset'
-  | 'jellyfin-recently-added-scan'
-  | 'jellyfin-full-scan'
-  | 'image-cache-cleanup'
-  | 'availability-sync';
+  | "plex-recently-added-scan"
+  | "plex-full-scan"
+  | "plex-watchlist-sync"
+  | "plex-refresh-token"
+  | "radarr-scan"
+  | "sonarr-scan"
+  | "download-sync"
+  | "download-sync-reset"
+  | "jellyfin-recently-added-scan"
+  | "jellyfin-full-scan"
+  | "image-cache-cleanup"
+  | "availability-sync";
 
 export interface AllSettings {
   clientId: string;
@@ -322,7 +322,7 @@ export interface AllSettings {
 
 const SETTINGS_PATH = process.env.CONFIG_DIRECTORY
   ? `${process.env.CONFIG_DIRECTORY}/settings.json`
-  : path.join(__dirname, '../../../config/settings.json');
+  : path.join(__dirname, "../../../config/settings.json");
 
 class Settings {
   private data: AllSettings;
@@ -330,12 +330,12 @@ class Settings {
   constructor(initialSettings?: AllSettings) {
     this.data = {
       clientId: randomUUID(),
-      vapidPrivate: '',
-      vapidPublic: '',
+      vapidPrivate: "",
+      vapidPublic: "",
       main: {
-        apiKey: '',
-        applicationTitle: 'Jellyseerr',
-        applicationUrl: '',
+        apiKey: "",
+        applicationTitle: "Jellyseerr",
+        applicationUrl: "",
         cacheImages: false,
         defaultPermissions: Permission.REQUEST,
         defaultQuotas: {
@@ -346,32 +346,32 @@ class Settings {
         localLogin: true,
         mediaServerLogin: true,
         newPlexLogin: true,
-        discoverRegion: '',
-        streamingRegion: '',
-        originalLanguage: '',
+        discoverRegion: "",
+        streamingRegion: "",
+        originalLanguage: "",
         mediaServerType: MediaServerType.NOT_CONFIGURED,
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
-        locale: 'en',
+        locale: "en",
       },
       plex: {
-        name: '',
-        ip: '',
+        name: "",
+        ip: "",
         port: 32400,
         useSsl: false,
         libraries: [],
       },
       jellyfin: {
-        name: '',
-        ip: '',
+        name: "",
+        ip: "",
         port: 8096,
         useSsl: false,
-        urlBase: '',
-        externalHostname: '',
-        jellyfinForgotPasswordUrl: '',
+        urlBase: "",
+        externalHostname: "",
+        jellyfinForgotPasswordUrl: "",
         libraries: [],
-        serverId: '',
-        apiKey: '',
+        serverId: "",
+        apiKey: "",
       },
       tautulli: {},
       radarr: [],
@@ -385,22 +385,22 @@ class Settings {
             enabled: false,
             options: {
               userEmailRequired: false,
-              emailFrom: '',
-              smtpHost: '',
+              emailFrom: "",
+              smtpHost: "",
               smtpPort: 587,
               secure: false,
               ignoreTls: false,
               requireTls: false,
               allowSelfSigned: false,
-              senderName: 'Jellyseerr',
+              senderName: "Jellyseerr",
             },
           },
           discord: {
             enabled: false,
             types: 0,
             options: {
-              webhookUrl: '',
-              webhookRoleId: '',
+              webhookUrl: "",
+              webhookRoleId: "",
               enableMentions: true,
             },
           },
@@ -408,23 +408,23 @@ class Settings {
             enabled: false,
             types: 0,
             options: {
-              webhookUrl: '',
+              webhookUrl: "",
             },
           },
           slack: {
             enabled: false,
             types: 0,
             options: {
-              webhookUrl: '',
+              webhookUrl: "",
             },
           },
           telegram: {
             enabled: false,
             types: 0,
             options: {
-              botAPI: '',
-              chatId: '',
-              messageThreadId: '',
+              botAPI: "",
+              chatId: "",
+              messageThreadId: "",
               sendSilently: false,
             },
           },
@@ -432,25 +432,25 @@ class Settings {
             enabled: false,
             types: 0,
             options: {
-              accessToken: '',
+              accessToken: "",
             },
           },
           pushover: {
             enabled: false,
             types: 0,
             options: {
-              accessToken: '',
-              userToken: '',
-              sound: '',
+              accessToken: "",
+              userToken: "",
+              sound: "",
             },
           },
           webhook: {
             enabled: false,
             types: 0,
             options: {
-              webhookUrl: '',
+              webhookUrl: "",
               jsonPayload:
-                'IntcbiAgXCJub3RpZmljYXRpb25fdHlwZVwiOiBcInt7bm90aWZpY2F0aW9uX3R5cGV9fVwiLFxuICBcImV2ZW50XCI6IFwie3tldmVudH19XCIsXG4gIFwic3ViamVjdFwiOiBcInt7c3ViamVjdH19XCIsXG4gIFwibWVzc2FnZVwiOiBcInt7bWVzc2FnZX19XCIsXG4gIFwiaW1hZ2VcIjogXCJ7e2ltYWdlfX1cIixcbiAgXCJ7e21lZGlhfX1cIjoge1xuICAgIFwibWVkaWFfdHlwZVwiOiBcInt7bWVkaWFfdHlwZX19XCIsXG4gICAgXCJ0bWRiSWRcIjogXCJ7e21lZGlhX3RtZGJpZH19XCIsXG4gICAgXCJ0dmRiSWRcIjogXCJ7e21lZGlhX3R2ZGJpZH19XCIsXG4gICAgXCJzdGF0dXNcIjogXCJ7e21lZGlhX3N0YXR1c319XCIsXG4gICAgXCJzdGF0dXM0a1wiOiBcInt7bWVkaWFfc3RhdHVzNGt9fVwiXG4gIH0sXG4gIFwie3tyZXF1ZXN0fX1cIjoge1xuICAgIFwicmVxdWVzdF9pZFwiOiBcInt7cmVxdWVzdF9pZH19XCIsXG4gICAgXCJyZXF1ZXN0ZWRCeV9lbWFpbFwiOiBcInt7cmVxdWVzdGVkQnlfZW1haWx9fVwiLFxuICAgIFwicmVxdWVzdGVkQnlfdXNlcm5hbWVcIjogXCJ7e3JlcXVlc3RlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICBcInJlcXVlc3RlZEJ5X2F2YXRhclwiOiBcInt7cmVxdWVzdGVkQnlfYXZhdGFyfX1cIixcbiAgICBcInJlcXVlc3RlZEJ5X3NldHRpbmdzX2Rpc2NvcmRJZFwiOiBcInt7cmVxdWVzdGVkQnlfc2V0dGluZ3NfZGlzY29yZElkfX1cIixcbiAgICBcInJlcXVlc3RlZEJ5X3NldHRpbmdzX3RlbGVncmFtQ2hhdElkXCI6IFwie3tyZXF1ZXN0ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZH19XCJcbiAgfSxcbiAgXCJ7e2lzc3VlfX1cIjoge1xuICAgIFwiaXNzdWVfaWRcIjogXCJ7e2lzc3VlX2lkfX1cIixcbiAgICBcImlzc3VlX3R5cGVcIjogXCJ7e2lzc3VlX3R5cGV9fVwiLFxuICAgIFwiaXNzdWVfc3RhdHVzXCI6IFwie3tpc3N1ZV9zdGF0dXN9fVwiLFxuICAgIFwicmVwb3J0ZWRCeV9lbWFpbFwiOiBcInt7cmVwb3J0ZWRCeV9lbWFpbH19XCIsXG4gICAgXCJyZXBvcnRlZEJ5X3VzZXJuYW1lXCI6IFwie3tyZXBvcnRlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICBcInJlcG9ydGVkQnlfYXZhdGFyXCI6IFwie3tyZXBvcnRlZEJ5X2F2YXRhcn19XCIsXG4gICAgXCJyZXBvcnRlZEJ5X3NldHRpbmdzX2Rpc2NvcmRJZFwiOiBcInt7cmVwb3J0ZWRCeV9zZXR0aW5nc19kaXNjb3JkSWR9fVwiLFxuICAgIFwicmVwb3J0ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZFwiOiBcInt7cmVwb3J0ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZH19XCJcbiAgfSxcbiAgXCJ7e2NvbW1lbnR9fVwiOiB7XG4gICAgXCJjb21tZW50X21lc3NhZ2VcIjogXCJ7e2NvbW1lbnRfbWVzc2FnZX19XCIsXG4gICAgXCJjb21tZW50ZWRCeV9lbWFpbFwiOiBcInt7Y29tbWVudGVkQnlfZW1haWx9fVwiLFxuICAgIFwiY29tbWVudGVkQnlfdXNlcm5hbWVcIjogXCJ7e2NvbW1lbnRlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICBcImNvbW1lbnRlZEJ5X2F2YXRhclwiOiBcInt7Y29tbWVudGVkQnlfYXZhdGFyfX1cIixcbiAgICBcImNvbW1lbnRlZEJ5X3NldHRpbmdzX2Rpc2NvcmRJZFwiOiBcInt7Y29tbWVudGVkQnlfc2V0dGluZ3NfZGlzY29yZElkfX1cIixcbiAgICBcImNvbW1lbnRlZEJ5X3NldHRpbmdzX3RlbGVncmFtQ2hhdElkXCI6IFwie3tjb21tZW50ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZH19XCJcbiAgfSxcbiAgXCJ7e2V4dHJhfX1cIjogW11cbn0i',
+                "IntcbiAgXCJub3RpZmljYXRpb25fdHlwZVwiOiBcInt7bm90aWZpY2F0aW9uX3R5cGV9fVwiLFxuICBcImV2ZW50XCI6IFwie3tldmVudH19XCIsXG4gIFwic3ViamVjdFwiOiBcInt7c3ViamVjdH19XCIsXG4gIFwibWVzc2FnZVwiOiBcInt7bWVzc2FnZX19XCIsXG4gIFwiaW1hZ2VcIjogXCJ7e2ltYWdlfX1cIixcbiAgXCJ7e21lZGlhfX1cIjoge1xuICAgIFwibWVkaWFfdHlwZVwiOiBcInt7bWVkaWFfdHlwZX19XCIsXG4gICAgXCJ0bWRiSWRcIjogXCJ7e21lZGlhX3RtZGJpZH19XCIsXG4gICAgXCJ0dmRiSWRcIjogXCJ7e21lZGlhX3R2ZGJpZH19XCIsXG4gICAgXCJzdGF0dXNcIjogXCJ7e21lZGlhX3N0YXR1c319XCIsXG4gICAgXCJzdGF0dXM0a1wiOiBcInt7bWVkaWFfc3RhdHVzNGt9fVwiXG4gIH0sXG4gIFwie3tyZXF1ZXN0fX1cIjoge1xuICAgIFwicmVxdWVzdF9pZFwiOiBcInt7cmVxdWVzdF9pZH19XCIsXG4gICAgXCJyZXF1ZXN0ZWRCeV9lbWFpbFwiOiBcInt7cmVxdWVzdGVkQnlfZW1haWx9fVwiLFxuICAgIFwicmVxdWVzdGVkQnlfdXNlcm5hbWVcIjogXCJ7e3JlcXVlc3RlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICBcInJlcXVlc3RlZEJ5X2F2YXRhclwiOiBcInt7cmVxdWVzdGVkQnlfYXZhdGFyfX1cIixcbiAgICBcInJlcXVlc3RlZEJ5X3NldHRpbmdzX2Rpc2NvcmRJZFwiOiBcInt7cmVxdWVzdGVkQnlfc2V0dGluZ3NfZGlzY29yZElkfX1cIixcbiAgICBcInJlcXVlc3RlZEJ5X3NldHRpbmdzX3RlbGVncmFtQ2hhdElkXCI6IFwie3tyZXF1ZXN0ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZH19XCJcbiAgfSxcbiAgXCJ7e2lzc3VlfX1cIjoge1xuICAgIFwiaXNzdWVfaWRcIjogXCJ7e2lzc3VlX2lkfX1cIixcbiAgICBcImlzc3VlX3R5cGVcIjogXCJ7e2lzc3VlX3R5cGV9fVwiLFxuICAgIFwiaXNzdWVfc3RhdHVzXCI6IFwie3tpc3N1ZV9zdGF0dXN9fVwiLFxuICAgIFwicmVwb3J0ZWRCeV9lbWFpbFwiOiBcInt7cmVwb3J0ZWRCeV9lbWFpbH19XCIsXG4gICAgXCJyZXBvcnRlZEJ5X3VzZXJuYW1lXCI6IFwie3tyZXBvcnRlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICBcInJlcG9ydGVkQnlfYXZhdGFyXCI6IFwie3tyZXBvcnRlZEJ5X2F2YXRhcn19XCIsXG4gICAgXCJyZXBvcnRlZEJ5X3NldHRpbmdzX2Rpc2NvcmRJZFwiOiBcInt7cmVwb3J0ZWRCeV9zZXR0aW5nc19kaXNjb3JkSWR9fVwiLFxuICAgIFwicmVwb3J0ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZFwiOiBcInt7cmVwb3J0ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZH19XCJcbiAgfSxcbiAgXCJ7e2NvbW1lbnR9fVwiOiB7XG4gICAgXCJjb21tZW50X21lc3NhZ2VcIjogXCJ7e2NvbW1lbnRfbWVzc2FnZX19XCIsXG4gICAgXCJjb21tZW50ZWRCeV9lbWFpbFwiOiBcInt7Y29tbWVudGVkQnlfZW1haWx9fVwiLFxuICAgIFwiY29tbWVudGVkQnlfdXNlcm5hbWVcIjogXCJ7e2NvbW1lbnRlZEJ5X3VzZXJuYW1lfX1cIixcbiAgICBcImNvbW1lbnRlZEJ5X2F2YXRhclwiOiBcInt7Y29tbWVudGVkQnlfYXZhdGFyfX1cIixcbiAgICBcImNvbW1lbnRlZEJ5X3NldHRpbmdzX2Rpc2NvcmRJZFwiOiBcInt7Y29tbWVudGVkQnlfc2V0dGluZ3NfZGlzY29yZElkfX1cIixcbiAgICBcImNvbW1lbnRlZEJ5X3NldHRpbmdzX3RlbGVncmFtQ2hhdElkXCI6IFwie3tjb21tZW50ZWRCeV9zZXR0aW5nc190ZWxlZ3JhbUNoYXRJZH19XCJcbiAgfSxcbiAgXCJ7e2V4dHJhfX1cIjogW11cbn0i",
             },
           },
           webpush: {
@@ -461,48 +461,48 @@ class Settings {
             enabled: false,
             types: 0,
             options: {
-              url: '',
-              token: '',
+              url: "",
+              token: "",
             },
           },
         },
       },
       jobs: {
-        'plex-recently-added-scan': {
-          schedule: '0 */5 * * * *',
+        "plex-recently-added-scan": {
+          schedule: "0 */5 * * * *",
         },
-        'plex-full-scan': {
-          schedule: '0 0 3 * * *',
+        "plex-full-scan": {
+          schedule: "0 0 3 * * *",
         },
-        'plex-watchlist-sync': {
-          schedule: '0 */3 * * * *',
+        "plex-watchlist-sync": {
+          schedule: "0 */3 * * * *",
         },
-        'plex-refresh-token': {
-          schedule: '0 0 5 * * *',
+        "plex-refresh-token": {
+          schedule: "0 0 5 * * *",
         },
-        'radarr-scan': {
-          schedule: '0 0 4 * * *',
+        "radarr-scan": {
+          schedule: "0 0 4 * * *",
         },
-        'sonarr-scan': {
-          schedule: '0 30 4 * * *',
+        "sonarr-scan": {
+          schedule: "0 30 4 * * *",
         },
-        'availability-sync': {
-          schedule: '0 0 5 * * *',
+        "availability-sync": {
+          schedule: "0 0 5 * * *",
         },
-        'download-sync': {
-          schedule: '0 * * * * *',
+        "download-sync": {
+          schedule: "0 * * * * *",
         },
-        'download-sync-reset': {
-          schedule: '0 0 1 * * *',
+        "download-sync-reset": {
+          schedule: "0 0 1 * * *",
         },
-        'jellyfin-recently-added-scan': {
-          schedule: '0 */5 * * * *',
+        "jellyfin-recently-added-scan": {
+          schedule: "0 */5 * * * *",
         },
-        'jellyfin-full-scan': {
-          schedule: '0 0 3 * * *',
+        "jellyfin-full-scan": {
+          schedule: "0 0 3 * * *",
         },
-        'image-cache-cleanup': {
-          schedule: '0 0 5 * * *',
+        "image-cache-cleanup": {
+          schedule: "0 0 5 * * *",
         },
       },
       network: {
@@ -511,12 +511,12 @@ class Settings {
         forceIpv4First: false,
         proxy: {
           enabled: false,
-          hostname: '',
+          hostname: "",
           port: 8080,
           useSsl: false,
-          user: '',
-          password: '',
-          bypassFilter: '',
+          user: "",
+          password: "",
+          bypassFilter: "",
           bypassLocalAddresses: true,
         },
       },
@@ -593,10 +593,10 @@ class Settings {
       jellyfinExternalHost: this.data.jellyfin.externalHostname,
       jellyfinForgotPasswordUrl: this.data.jellyfin.jellyfinForgotPasswordUrl,
       movie4kEnabled: this.data.radarr.some(
-        (radarr) => radarr.is4k && radarr.isDefault
+        (radarr) => radarr.is4k && radarr.isDefault,
       ),
       series4kEnabled: this.data.sonarr.some(
-        (sonarr) => sonarr.is4k && sonarr.isDefault
+        (sonarr) => sonarr.is4k && sonarr.isDefault,
       ),
       discoverRegion: this.data.main.discoverRegion,
       streamingRegion: this.data.main.streamingRegion,
@@ -652,17 +652,27 @@ class Settings {
   }
 
   public async regenerateApiKey(): Promise<MainSettings> {
-    this.main.apiKey = this.generateApiKey();
+    this.main.apiKey = await this.generateApiKey();
     await this.save();
     return this.main;
   }
 
-  private generateApiKey(): string {
-    if (process.env.API_KEY) {
+  private async apiKeyFromEnvOrCred(): Promise<string | undefined> {
+    const apiKeyCredential = `${process.env.CREDENTIALS_DIRECTORY}/api-key`;
+
+    try {
+      return await fs.readFile(apiKeyCredential, "utf-8");
+    } catch {
       return process.env.API_KEY;
-    } else {
-      return Buffer.from(`${Date.now()}${randomUUID()}`).toString('base64');
     }
+  }
+
+  private async generateApiKey(): Promise<string> {
+    const apiKey = await this.apiKeyFromEnvOrCred();
+
+    return (
+      apiKey || Buffer.from(`${Date.now()}${randomUUID()}`).toString("base64")
+    );
   }
 
   /**
@@ -681,7 +691,7 @@ class Settings {
 
     let data;
     try {
-      data = await fs.readFile(SETTINGS_PATH, 'utf-8');
+      data = await fs.readFile(SETTINGS_PATH, "utf-8");
     } catch {
       await this.save();
     }
@@ -695,11 +705,12 @@ class Settings {
     // generate keys and ids if it's missing
     let change = false;
     if (!this.data.main.apiKey) {
-      this.data.main.apiKey = this.generateApiKey();
+      this.data.main.apiKey = await this.generateApiKey();
       change = true;
-    } else if (process.env.API_KEY) {
-      if (this.main.apiKey != process.env.API_KEY) {
-        this.main.apiKey = process.env.API_KEY;
+    } else {
+      const apiKey = await this.apiKeyFromEnvOrCred();
+      if (apiKey && this.main.apiKey != apiKey) {
+        this.main.apiKey = apiKey;
       }
     }
     if (!this.data.clientId) {
@@ -720,8 +731,8 @@ class Settings {
   }
 
   public async save(): Promise<void> {
-    const tmp = SETTINGS_PATH + '.tmp';
-    await fs.writeFile(tmp, JSON.stringify(this.data, undefined, ' '));
+    const tmp = SETTINGS_PATH + ".tmp";
+    await fs.writeFile(tmp, JSON.stringify(this.data, undefined, " "));
     await fs.rename(tmp, SETTINGS_PATH);
   }
 }
