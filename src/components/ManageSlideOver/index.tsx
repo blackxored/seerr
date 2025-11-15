@@ -28,6 +28,7 @@ import type { MediaWatchDataResponse } from '@server/interfaces/api/mediaInterfa
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
+import axios from 'axios';
 import Link from 'next/link';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
@@ -111,25 +112,18 @@ const ManageSlideOver = ({
 
   const deleteMedia = async () => {
     if (data.mediaInfo) {
-      const res = await fetch(`/api/v1/media/${data.mediaInfo.id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error();
+      await axios.delete(`/api/v1/media/${data.mediaInfo.id}`);
       revalidate();
       onClose();
     }
   };
 
-  const deleteMediaFile = async () => {
+  const deleteMediaFile = async (is4k = false) => {
     if (data.mediaInfo) {
-      // we don't check if the response is ok here because there may be no file to delete
-      await fetch(`/api/v1/media/${data.mediaInfo.id}/file`, {
-        method: 'DELETE',
-      });
-      await fetch(`/api/v1/media/${data.mediaInfo.id}`, {
-        method: 'DELETE',
-      });
-
+      await axios.delete(
+        `/api/v1/media/${data.mediaInfo.id}/file?is4k=${is4k}`
+      );
+      await axios.delete(`/api/v1/media/${data.mediaInfo.id}`);
       revalidate();
       onClose();
     }
@@ -156,18 +150,39 @@ const ManageSlideOver = ({
     return false;
   };
 
+  const isDefault4kService = () => {
+    if (data.mediaInfo) {
+      if (data.mediaInfo.mediaType === MediaType.MOVIE) {
+        return (
+          radarrData?.find(
+            (radarr) =>
+              radarr.isDefault &&
+              radarr.is4k &&
+              radarr.id === data.mediaInfo?.serviceId4k
+          ) !== undefined
+        );
+      } else {
+        return (
+          sonarrData?.find(
+            (sonarr) =>
+              sonarr.isDefault &&
+              sonarr.is4k &&
+              sonarr.id === data.mediaInfo?.serviceId4k
+          ) !== undefined
+        );
+      }
+    }
+    return false;
+  };
+
   const markAvailable = async (is4k = false) => {
     if (data.mediaInfo) {
-      const res = await fetch(`/api/v1/media/${data.mediaInfo?.id}/available`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          is4k,
+      await axios.post(`/api/v1/media/${data.mediaInfo?.id}/available`, {
+        is4k,
+        ...(mediaType === 'tv' && {
+          seasons: data.seasons.filter((season) => season.seasonNumber !== 0),
         }),
       });
-      if (!res.ok) throw new Error();
       revalidate();
     }
   };
@@ -426,7 +441,7 @@ const ManageSlideOver = ({
                   isDefaultService() && (
                     <div>
                       <ConfirmButton
-                        onClick={() => deleteMediaFile()}
+                        onClick={() => deleteMediaFile(false)}
                         confirmText={intl.formatMessage(
                           globalMessages.areyousure
                         )}
@@ -582,10 +597,10 @@ const ManageSlideOver = ({
                         </span>
                       </Button>
                     </a>
-                    {isDefaultService() && (
+                    {isDefault4kService() && (
                       <div>
                         <ConfirmButton
-                          onClick={() => deleteMediaFile()}
+                          onClick={() => deleteMediaFile(true)}
                           confirmText={intl.formatMessage(
                             globalMessages.areyousure
                           )}

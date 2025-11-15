@@ -49,6 +49,25 @@ export interface JellyfinSettings {
   serverId: string;
   apiKey: string;
 }
+
+export type OidcProvider = {
+  slug: string;
+  name: string;
+  issuerUrl: string;
+  clientId: string;
+  clientSecret: string;
+  logo?: string;
+  requiredClaims?: string;
+  scopes?: string;
+  newUserLogin?: boolean;
+};
+
+export type PublicOidcProvider = Pick<OidcProvider, "slug" | "name" | "logo">;
+
+export interface OidcSettings {
+  providers: OidcProvider[];
+}
+
 export interface TautulliSettings {
   hostname?: string;
   port?: number;
@@ -100,6 +119,16 @@ interface Quota {
   quotaDays?: number;
 }
 
+export enum MetadataProviderType {
+  TMDB = "tmdb",
+  TVDB = "tvdb",
+}
+
+export interface MetadataSettings {
+  tv: MetadataProviderType;
+  anime: MetadataProviderType;
+}
+
 export interface ProxySettings {
   enabled: boolean;
   hostname: string;
@@ -122,16 +151,38 @@ export interface MainSettings {
     tv: Quota;
   };
   hideAvailable: boolean;
+  hideBlacklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
+  oidcLogin: boolean;
   newPlexLogin: boolean;
   discoverRegion: string;
   streamingRegion: string;
   originalLanguage: string;
+  blacklistedTags: string;
+  blacklistedTagsLimit: number;
   mediaServerType: number;
   partialRequestsEnabled: boolean;
   enableSpecialEpisodes: boolean;
   locale: string;
+  youtubeUrl: string;
+}
+
+export interface ProxySettings {
+  enabled: boolean;
+  hostname: string;
+  port: number;
+  useSsl: boolean;
+  user: string;
+  password: string;
+  bypassFilter: string;
+  bypassLocalAddresses: boolean;
+}
+
+export interface DnsCacheSettings {
+  enabled: boolean;
+  forceMinTtl?: number;
+  forceMaxTtl?: number;
 }
 
 export interface NetworkSettings {
@@ -139,6 +190,7 @@ export interface NetworkSettings {
   forceIpv4First: boolean;
   trustProxy: boolean;
   proxy: ProxySettings;
+  dnsCache: DnsCacheSettings;
 }
 
 interface PublicSettings {
@@ -149,6 +201,7 @@ interface FullPublicSettings extends PublicSettings {
   applicationTitle: string;
   applicationUrl: string;
   hideAvailable: boolean;
+  hideBlacklisted: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
   movie4kEnabled: boolean;
@@ -169,10 +222,13 @@ interface FullPublicSettings extends PublicSettings {
   emailEnabled: boolean;
   userEmailRequired: boolean;
   newPlexLogin: boolean;
+  youtubeUrl: string;
+  openIdProviders: PublicOidcProvider[];
 }
 
 export interface NotificationAgentConfig {
   enabled: boolean;
+  embedPoster: boolean;
   types?: number;
   options: Record<string, unknown>;
 }
@@ -210,13 +266,6 @@ export interface NotificationAgentEmail extends NotificationAgentConfig {
   };
 }
 
-export interface NotificationAgentLunaSea extends NotificationAgentConfig {
-  options: {
-    webhookUrl: string;
-    profileName?: string;
-  };
-}
-
 export interface NotificationAgentTelegram extends NotificationAgentConfig {
   options: {
     botUsername?: string;
@@ -247,6 +296,7 @@ export interface NotificationAgentWebhook extends NotificationAgentConfig {
     webhookUrl: string;
     jsonPayload: string;
     authHeader?: string;
+    supportVariables?: boolean;
   };
 }
 
@@ -254,6 +304,19 @@ export interface NotificationAgentGotify extends NotificationAgentConfig {
   options: {
     url: string;
     token: string;
+    priority: number;
+  };
+}
+
+export interface NotificationAgentNtfy extends NotificationAgentConfig {
+  options: {
+    url: string;
+    topic: string;
+    authMethodUsernamePassword?: boolean;
+    username?: string;
+    password?: string;
+    authMethodToken?: boolean;
+    token?: string;
   };
 }
 
@@ -273,7 +336,7 @@ interface NotificationAgents {
   discord: NotificationAgentDiscord;
   email: NotificationAgentEmail;
   gotify: NotificationAgentGotify;
-  lunasea: NotificationAgentLunaSea;
+  ntfy: NotificationAgentNtfy;
   pushbullet: NotificationAgentPushbullet;
   pushover: NotificationAgentPushover;
   slack: NotificationAgentSlack;
@@ -311,6 +374,7 @@ export interface AllSettings {
   main: MainSettings;
   plex: PlexSettings;
   jellyfin: JellyfinSettings;
+  oidc: OidcSettings;
   tautulli: TautulliSettings;
   radarr: RadarrSettings[];
   sonarr: SonarrSettings[];
@@ -318,6 +382,8 @@ export interface AllSettings {
   notifications: NotificationSettings;
   jobs: Record<JobId, JobSettings>;
   network: NetworkSettings;
+  metadataSettings: MetadataSettings;
+  migrations: string[];
 }
 
 const SETTINGS_PATH = process.env.CONFIG_DIRECTORY
@@ -334,7 +400,7 @@ class Settings {
       vapidPublic: "",
       main: {
         apiKey: "",
-        applicationTitle: "Jellyseerr",
+        applicationTitle: "Seerr",
         applicationUrl: "",
         cacheImages: false,
         defaultPermissions: Permission.REQUEST,
@@ -343,8 +409,10 @@ class Settings {
           tv: {},
         },
         hideAvailable: false,
+        hideBlacklisted: false,
         localLogin: true,
         mediaServerLogin: true,
+        oidcLogin: false,
         newPlexLogin: true,
         discoverRegion: "",
         streamingRegion: "",
@@ -353,6 +421,9 @@ class Settings {
         partialRequestsEnabled: true,
         enableSpecialEpisodes: false,
         locale: "en",
+        blacklistedTags: "",
+        blacklistedTagsLimit: 0,
+        youtubeUrl: "",
       },
       plex: {
         name: "",
@@ -373,7 +444,14 @@ class Settings {
         serverId: "",
         apiKey: "",
       },
+      oidc: {
+        providers: [],
+      },
       tautulli: {},
+      metadataSettings: {
+        tv: MetadataProviderType.TMDB,
+        anime: MetadataProviderType.TMDB,
+      },
       radarr: [],
       sonarr: [],
       public: {
@@ -383,6 +461,7 @@ class Settings {
         agents: {
           email: {
             enabled: false,
+            embedPoster: true,
             options: {
               userEmailRequired: false,
               emailFrom: "",
@@ -392,11 +471,12 @@ class Settings {
               ignoreTls: false,
               requireTls: false,
               allowSelfSigned: false,
-              senderName: "Jellyseerr",
+              senderName: "Seerr",
             },
           },
           discord: {
             enabled: false,
+            embedPoster: true,
             types: 0,
             options: {
               webhookUrl: "",
@@ -404,15 +484,9 @@ class Settings {
               enableMentions: true,
             },
           },
-          lunasea: {
-            enabled: false,
-            types: 0,
-            options: {
-              webhookUrl: "",
-            },
-          },
           slack: {
             enabled: false,
+            embedPoster: true,
             types: 0,
             options: {
               webhookUrl: "",
@@ -420,6 +494,7 @@ class Settings {
           },
           telegram: {
             enabled: false,
+            embedPoster: true,
             types: 0,
             options: {
               botAPI: "",
@@ -430,6 +505,7 @@ class Settings {
           },
           pushbullet: {
             enabled: false,
+            embedPoster: false,
             types: 0,
             options: {
               accessToken: "",
@@ -437,6 +513,7 @@ class Settings {
           },
           pushover: {
             enabled: false,
+            embedPoster: true,
             types: 0,
             options: {
               accessToken: "",
@@ -446,6 +523,7 @@ class Settings {
           },
           webhook: {
             enabled: false,
+            embedPoster: true,
             types: 0,
             options: {
               webhookUrl: "",
@@ -455,14 +533,26 @@ class Settings {
           },
           webpush: {
             enabled: false,
+            embedPoster: true,
             options: {},
           },
           gotify: {
             enabled: false,
+            embedPoster: false,
             types: 0,
             options: {
               url: "",
               token: "",
+              priority: 0,
+            },
+          },
+          ntfy: {
+            enabled: false,
+            embedPoster: true,
+            types: 0,
+            options: {
+              url: "",
+              topic: "",
             },
           },
         },
@@ -507,8 +597,8 @@ class Settings {
       },
       network: {
         csrfProtection: false,
-        trustProxy: false,
         forceIpv4First: false,
+        trustProxy: false,
         proxy: {
           enabled: false,
           hostname: "",
@@ -519,7 +609,13 @@ class Settings {
           bypassFilter: "",
           bypassLocalAddresses: true,
         },
+        dnsCache: {
+          enabled: false,
+          forceMinTtl: 0,
+          forceMaxTtl: -1,
+        },
       },
+      migrations: [],
     };
     if (initialSettings) {
       this.data = merge(this.data, initialSettings);
@@ -550,12 +646,28 @@ class Settings {
     this.data.jellyfin = data;
   }
 
+  get oidc(): OidcSettings {
+    return this.data.oidc;
+  }
+
+  set oidc(data: OidcSettings) {
+    this.data.oidc = data;
+  }
+
   get tautulli(): TautulliSettings {
     return this.data.tautulli;
   }
 
   set tautulli(data: TautulliSettings) {
     this.data.tautulli = data;
+  }
+
+  get metadataSettings(): MetadataSettings {
+    return this.data.metadataSettings;
+  }
+
+  set metadataSettings(data: MetadataSettings) {
+    this.data.metadataSettings = data;
   }
 
   get radarr(): RadarrSettings[] {
@@ -588,6 +700,7 @@ class Settings {
       applicationTitle: this.data.main.applicationTitle,
       applicationUrl: this.data.main.applicationUrl,
       hideAvailable: this.data.main.hideAvailable,
+      hideBlacklisted: this.data.main.hideBlacklisted,
       localLogin: this.data.main.localLogin,
       mediaServerLogin: this.data.main.mediaServerLogin,
       jellyfinExternalHost: this.data.jellyfin.externalHostname,
@@ -612,6 +725,14 @@ class Settings {
       userEmailRequired:
         this.data.notifications.agents.email.options.userEmailRequired,
       newPlexLogin: this.data.main.newPlexLogin,
+      youtubeUrl: this.data.main.youtubeUrl,
+      openIdProviders: this.data.main.oidcLogin
+        ? this.data.oidc.providers.map((p) => ({
+            slug: p.slug,
+            name: p.name,
+            logo: p.logo,
+          }))
+        : [],
     };
   }
 
@@ -637,6 +758,14 @@ class Settings {
 
   set network(data: NetworkSettings) {
     this.data.network = data;
+  }
+
+  get migrations(): string[] {
+    return this.data.migrations;
+  }
+
+  set migrations(data: string[]) {
+    this.data.migrations = data;
   }
 
   get clientId(): string {
@@ -681,9 +810,13 @@ class Settings {
    * This will load settings from file unless an optional argument of the object structure
    * is passed in.
    * @param overrideSettings If passed in, will override all existing settings with these
+   * @param raw If true, will load the settings without running migrations or generating missing
    * values
    */
-  public async load(overrideSettings?: AllSettings): Promise<Settings> {
+  public async load(
+    overrideSettings?: AllSettings,
+    raw = false,
+  ): Promise<Settings> {
     if (overrideSettings) {
       this.data = overrideSettings;
       return this;
@@ -696,10 +829,12 @@ class Settings {
       await this.save();
     }
 
-    if (data) {
+    if (data && !raw) {
       const parsedJson = JSON.parse(data);
       const migratedData = await runMigrations(parsedJson, SETTINGS_PATH);
       this.data = merge(this.data, migratedData);
+    } else if (data) {
+      this.data = JSON.parse(data);
     }
 
     // generate keys and ids if it's missing

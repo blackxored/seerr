@@ -28,6 +28,7 @@ import {
 import { MediaServerType } from '@server/constants/server';
 import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
 import { hasPermission } from '@server/lib/permissions';
+import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -35,6 +36,7 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
+import validator from 'validator';
 import * as Yup from 'yup';
 import JellyfinImportModal from './JellyfinImportModal';
 
@@ -181,10 +183,7 @@ const UserList = () => {
     setDeleting(true);
 
     try {
-      const res = await fetch(`/api/v1/user/${deleteModal.user?.id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error();
+      await axios.delete(`/api/v1/user/${deleteModal.user?.id}`);
 
       addToast(intl.formatMessage(messages.userdeleted), {
         autoDismiss: true,
@@ -212,7 +211,11 @@ const UserList = () => {
     ),
     email: Yup.string()
       .required()
-      .email(intl.formatMessage(messages.validationEmail)),
+      .test(
+        'email',
+        intl.formatMessage(messages.validationEmail),
+        (value) => !value || validator.isEmail(value, { require_tld: false })
+      ),
     password: Yup.lazy((value) =>
       !value
         ? Yup.string()
@@ -286,34 +289,20 @@ const UserList = () => {
           validationSchema={CreateUserSchema}
           onSubmit={async (values) => {
             try {
-              const res = await fetch('/api/v1/user', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  username: values.username,
-                  email: values.email,
-                  password: values.genpassword ? null : values.password,
-                }),
+              await axios.post('/api/v1/user', {
+                username: values.username,
+                email: values.email,
+                password: values.genpassword ? null : values.password,
               });
-              if (!res.ok) throw new Error(res.statusText, { cause: res });
               addToast(intl.formatMessage(messages.usercreatedsuccess), {
                 appearance: 'success',
                 autoDismiss: true,
               });
               setCreateModal({ isOpen: false });
             } catch (e) {
-              let errorData;
-              try {
-                errorData = await e.cause?.text();
-                errorData = JSON.parse(errorData);
-              } catch {
-                /* empty */
-              }
               addToast(
                 intl.formatMessage(
-                  errorData.errors?.includes('USER_EXISTS')
+                  e?.response?.data?.errors?.includes('USER_EXISTS')
                     ? messages.usercreatedfailedexisting
                     : messages.usercreatedfailed
                 ),

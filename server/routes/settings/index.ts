@@ -28,7 +28,9 @@ import discoverSettingRoutes from '@server/routes/settings/discover';
 import { ApiError } from '@server/types/error';
 import { appDataPath } from '@server/utils/appDataVolume';
 import { getAppVersion } from '@server/utils/appVersion';
+import { dnsCache } from '@server/utils/dnsCache';
 import { getHostname } from '@server/utils/getHostname';
+import type { DnsEntries, DnsStats } from 'dns-caching';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import fs from 'fs';
@@ -37,6 +39,7 @@ import { rescheduleJob } from 'node-schedule';
 import path from 'path';
 import semver from 'semver';
 import { URL } from 'url';
+import metadataRoutes from './metadata';
 import notificationRoutes from './notifications';
 import radarrRoutes from './radarr';
 import sonarrRoutes from './sonarr';
@@ -47,6 +50,7 @@ settingsRoutes.use('/notifications', notificationRoutes);
 settingsRoutes.use('/radarr', radarrRoutes);
 settingsRoutes.use('/sonarr', sonarrRoutes);
 settingsRoutes.use('/discover', discoverSettingRoutes);
+settingsRoutes.use('/metadatas', metadataRoutes);
 
 const filteredMainSettings = (
   user: User,
@@ -103,6 +107,45 @@ settingsRoutes.post('/main/regenerate', async (req, res, next) => {
   }
 
   return res.status(200).json(filteredMainSettings(req.user, main));
+});
+
+settingsRoutes.get('/oidc', async (req, res) => {
+  const settings = getSettings();
+
+  return res.status(200).json(settings.oidc);
+});
+
+settingsRoutes.put('/oidc/:slug', async (req, res) => {
+  const settings = getSettings();
+  let provider = settings.oidc.providers.findIndex(
+    (p) => p.slug === req.params.slug
+  );
+
+  if (provider !== -1) {
+    Object.assign(settings.oidc.providers[provider], req.body);
+  } else {
+    settings.oidc.providers.push({ slug: req.params.slug, ...req.body });
+    provider = settings.oidc.providers.length - 1;
+  }
+
+  await settings.save();
+
+  return res.status(200).json(settings.oidc.providers[provider]);
+});
+
+settingsRoutes.delete('/oidc/:slug', async (req, res) => {
+  const settings = getSettings();
+  const provider = settings.oidc.providers.findIndex(
+    (p) => p.slug === req.params.slug
+  );
+
+  if (provider === -1)
+    return res.status(404).json({ message: 'Provider not found' });
+
+  settings.oidc.providers.splice(provider, 1);
+  await settings.save();
+
+  return res.status(200).json(settings.oidc);
 });
 
 settingsRoutes.get('/plex', (_req, res) => {
@@ -755,11 +798,18 @@ settingsRoutes.get('/cache', async (_req, res) => {
   const tmdbImageCache = await ImageProxy.getImageStats('tmdb');
   const avatarImageCache = await ImageProxy.getImageStats('avatar');
 
+  const stats: DnsStats | undefined = dnsCache?.getStats();
+  const entries: DnsEntries | undefined = dnsCache?.getCacheEntries();
+
   return res.status(200).json({
     apiCaches,
     imageCache: {
       tmdb: tmdbImageCache,
       avatar: avatarImageCache,
+    },
+    dnsCache: {
+      stats,
+      entries,
     },
   });
 });
@@ -771,6 +821,20 @@ settingsRoutes.post<{ cacheId: AvailableCacheIds }>(
 
     if (cache) {
       cache.flush();
+      return res.status(204).send();
+    }
+
+    next({ status: 404, message: 'Cache not found.' });
+  }
+);
+
+settingsRoutes.post<{ dnsEntry: string }>(
+  '/cache/dns/:dnsEntry/flush',
+  (req, res, next) => {
+    const dnsEntry = req.params.dnsEntry;
+
+    if (dnsCache) {
+      dnsCache.clear(dnsEntry);
       return res.status(204).send();
     }
 

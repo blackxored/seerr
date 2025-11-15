@@ -8,11 +8,12 @@ export interface SettingsContextProps {
   children?: React.ReactNode;
 }
 
-const defaultSettings = {
+const defaultSettings: PublicSettingsResponse = {
   initialized: false,
-  applicationTitle: 'Jellyseerr',
+  applicationTitle: 'Seerr',
   applicationUrl: '',
   hideAvailable: false,
+  hideBlacklisted: false,
   localLogin: true,
   mediaServerLogin: true,
   movie4kEnabled: false,
@@ -29,6 +30,8 @@ const defaultSettings = {
   locale: 'en',
   emailEnabled: false,
   newPlexLogin: true,
+  youtubeUrl: '',
+  openIdProviders: [],
 };
 
 export const SettingsContext = React.createContext<SettingsContextProps>({
